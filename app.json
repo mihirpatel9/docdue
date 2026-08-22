@@ -10,7 +10,11 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.mihirpatel.expiryvault",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "requireFullScreen": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.mihirpatel.expiryvault",
@@ -36,8 +40,18 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite",
-      "expo-secure-store",
+      [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Expiry Vault uses Face ID to unlock your encrypted documents."
+        }
+      ],
       [
         "expo-camera",
         {
