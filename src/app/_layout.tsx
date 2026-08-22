@@ -1,18 +1,31 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { SQLiteProvider } from 'expo-sqlite';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { migrateDbIfNeeded } from '@/db/migrations';
+import { ensureNotificationSetup } from '@/lib/notifications';
 
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    // Asked for once at startup rather than at the moment of saving, so a
+    // denied prompt never costs the user the document they just typed in.
+    ensureNotificationSetup();
+  }, []);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <SQLiteProvider databaseName="expiry-vault.db" onInit={migrateDbIfNeeded}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="index" options={{ title: 'Expiry Vault' }} />
+          <Stack.Screen
+            name="add"
+            options={{ title: 'Add document', presentation: 'modal' }}
+          />
+        </Stack>
+      </ThemeProvider>
+    </SQLiteProvider>
   );
 }
