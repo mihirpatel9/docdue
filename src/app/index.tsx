@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { listDocuments } from '@/db/documents';
+import { IS_INSECURE_PREVIEW } from '@/db/init';
 import { KIND_LABELS, type DocumentRow } from '@/db/types';
 import { useTheme } from '@/hooks/use-theme';
 import { URGENCY_COLORS, daysUntilExpiry, expiryLabel, urgencyOf } from '@/lib/expiry';
@@ -30,6 +31,27 @@ function DocumentCard({ doc }: { doc: DocumentRow }) {
           {expiryLabel(daysLeft)}
         </ThemedText>
       </View>
+    </View>
+  );
+}
+
+/**
+ * Deliberately loud and permanent. A preview that looks like the real app is
+ * how someone ends up typing a real passport number into unencrypted browser
+ * storage.
+ */
+function PreviewBanner() {
+  if (!IS_INSECURE_PREVIEW) return null;
+
+  return (
+    <View style={styles.banner}>
+      <ThemedText type="smallBold" style={styles.bannerText}>
+        Browser preview — not encrypted
+      </ThemedText>
+      <ThemedText type="small" style={styles.bannerText}>
+        No Keychain, no biometrics, no reminders here. Use test data only; the
+        real app is iOS and Android.
+      </ThemedText>
     </View>
   );
 }
@@ -69,6 +91,7 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.screen}>
+      <PreviewBanner />
       <FlatList
         data={documents}
         keyExtractor={(item) => item.id}
@@ -77,8 +100,13 @@ export default function HomeScreen() {
         contentContainerStyle={styles.list}
       />
 
+      {/*
+        Flattened, not an array: <Link asChild> renders through expo-router's
+        Radix Slot, which throws in development if the child element's style
+        prop is an array.
+      */}
       <Link href="/add" asChild>
-        <Pressable style={[styles.fab, { backgroundColor: theme.text }]}>
+        <Pressable style={StyleSheet.flatten([styles.fab, { backgroundColor: theme.text }])}>
           <ThemedText
             type="subtitle"
             style={[styles.fabLabel, { color: theme.background }]}>
@@ -121,4 +149,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fabLabel: { lineHeight: 38, fontSize: 34 },
+  banner: {
+    backgroundColor: '#7F1D1D',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    gap: Spacing.half,
+  },
+  bannerText: { color: '#FFFFFF' },
 });

@@ -1,7 +1,7 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, type AppStateStatus, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, type AppStateStatus, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -32,6 +32,14 @@ export function AppLock({ children }: { children: React.ReactNode }) {
   const backgroundedAt = useRef<number | null>(null);
 
   const authenticate = useCallback(async () => {
+    // The browser has no biometric API to call. The web preview is not the
+    // secure product (see IS_INSECURE_PREVIEW) and gating it behind a lock it
+    // cannot satisfy would just be an unopenable door.
+    if (Platform.OS === 'web') {
+      setState('unavailable');
+      return;
+    }
+
     const [hasHardware, isEnrolled] = await Promise.all([
       LocalAuthentication.hasHardwareAsync(),
       LocalAuthentication.isEnrolledAsync(),
@@ -61,7 +69,8 @@ export function AppLock({ children }: { children: React.ReactNode }) {
     // Blocks screenshots on Android and hides the app in the iOS app switcher,
     // so a document is not left sitting in a screenshot or a task-switcher
     // thumbnail where any other app or onlooker can reach it.
-    ScreenCapture.preventScreenCaptureAsync();
+    // No-op on web, and it throws there rather than returning quietly.
+    if (Platform.OS !== 'web') ScreenCapture.preventScreenCaptureAsync();
     authenticate();
 
     const subscription = AppState.addEventListener('change', (next: AppStateStatus) => {
@@ -81,7 +90,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.remove();
-      ScreenCapture.allowScreenCaptureAsync();
+      if (Platform.OS !== 'web') ScreenCapture.allowScreenCaptureAsync();
     };
   }, [authenticate]);
 

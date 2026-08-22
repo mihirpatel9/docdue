@@ -18,6 +18,10 @@ Notifications.setNotificationHandler({
 });
 
 export async function ensureNotificationSetup(): Promise<boolean> {
+  // Web notifications cannot be scheduled months into the future — they need
+  // the page open or a service worker. The reminders are a native feature.
+  if (Platform.OS === 'web') return false;
+
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL, {
       name: 'Expiry reminders',
@@ -64,6 +68,8 @@ export async function scheduleReminder(
   offsetDays: number,
   now: Date = new Date()
 ): Promise<string | null> {
+  if (Platform.OS === 'web') return null;
+
   const fireAt = reminderDate(expiresOn, offsetDays);
   if (fireAt.getTime() <= now.getTime()) return null;
 

@@ -1,8 +1,21 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import { Platform } from 'react-native';
 
 import { getOrCreateDatabaseKey } from '@/lib/secure-key';
 
 import { migrateDbIfNeeded } from './migrations';
+
+/**
+ * The browser has no Keychain, no SQLCipher and no biometrics — those are OS
+ * facilities, not things a web page can ask for. So the web build cannot keep
+ * this app's central promise and is a UI PREVIEW ONLY.
+ *
+ * This constant is not a feature flag to be flipped on later. It exists so the
+ * preview announces itself in the interface (see PreviewBanner) instead of
+ * looking exactly like the secure app while storing documents in the clear in
+ * browser storage. The shipped product is iOS and Android.
+ */
+export const IS_INSECURE_PREVIEW = Platform.OS === 'web';
 
 export class DatabaseNotEncryptedError extends Error {
   constructor() {
@@ -29,6 +42,14 @@ export class DatabaseNotEncryptedError extends Error {
  * is exactly the sort of well-meaning escape hatch that ends up in production.
  */
 export async function openVault(db: SQLiteDatabase): Promise<void> {
+  if (IS_INSECURE_PREVIEW) {
+    // No keying attempt on web. Pretending to encrypt would be worse than not
+    // encrypting: it would produce an app that looks identical to the secure
+    // one. The banner in the UI is what makes this state honest.
+    await migrateDbIfNeeded(db);
+    return;
+  }
+
   const key = await getOrCreateDatabaseKey();
 
   // Must be the first statement on the connection, before any read or write.
