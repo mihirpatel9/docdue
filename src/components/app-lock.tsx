@@ -1,11 +1,13 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, type AppStateStatus, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, type AppStateStatus, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -27,7 +29,13 @@ type LockState = 'locked' | 'unlocked' | 'unavailable';
  */
 export function AppLock({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
-  const [state, setState] = useState<LockState>('locked');
+  // Web starts unavailable rather than locked. `authenticate` reaches the same
+  // conclusion, but only inside an effect — so the server renders a lock screen
+  // that hydration immediately throws away, and the preview opens with a flash
+  // of a door that was never there.
+  const [state, setState] = useState<LockState>(
+    Platform.OS === 'web' ? 'unavailable' : 'locked'
+  );
   const [failed, setFailed] = useState(false);
   const backgroundedAt = useRef<number | null>(null);
 
@@ -99,19 +107,38 @@ export function AppLock({ children }: { children: React.ReactNode }) {
   return (
     <ThemedView style={styles.screen}>
       <View style={styles.panel}>
-        <ThemedText type="subtitle" style={styles.title}>
-          Locked
+        <View
+          style={[
+            styles.shield,
+            {
+              backgroundColor: failed ? theme.dangerSurface : theme.tintSurface,
+              borderColor: failed ? theme.danger : theme.tint,
+            },
+          ]}>
+          <Icon
+            name={failed ? 'lock-alert-outline' : 'shield-lock-outline'}
+            size={40}
+            color={failed ? theme.danger : theme.tint}
+          />
+        </View>
+
+        <ThemedText type="title" style={styles.title}>
+          Expiry Vault
         </ThemedText>
         <ThemedText type="default" themeColor="textSecondary" style={styles.body}>
           {failed
             ? 'That did not unlock. Try again to see your documents.'
             : 'Your documents are encrypted on this device.'}
         </ThemedText>
-        <Pressable onPress={authenticate} style={[styles.button, { backgroundColor: theme.text }]}>
-          <ThemedText type="default" style={{ color: theme.background, fontWeight: '600' }}>
-            Unlock
-          </ThemedText>
-        </Pressable>
+
+        <Button label="Unlock" icon="fingerprint" onPress={authenticate} style={styles.button} />
+      </View>
+
+      <View style={styles.footer}>
+        <Icon name="cloud-off-outline" size={14} color={theme.textTertiary} />
+        <ThemedText type="caption" themeColor="textTertiary">
+          Nothing leaves this device
+        </ThemedText>
       </View>
     </ThemedView>
   );
@@ -119,13 +146,24 @@ export function AppLock({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.four },
-  panel: { alignItems: 'center', gap: Spacing.three, maxWidth: 320 },
+  panel: { alignItems: 'center', gap: Spacing.two, maxWidth: 320, width: '100%' },
+  shield: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.three,
+  },
   title: { textAlign: 'center' },
   body: { textAlign: 'center' },
-  button: {
-    borderRadius: 12,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.five,
-    marginTop: Spacing.two,
+  button: { alignSelf: 'stretch', marginTop: Spacing.four, borderRadius: Radius.medium },
+  footer: {
+    position: 'absolute',
+    bottom: Spacing.five,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one + 2,
   },
 });

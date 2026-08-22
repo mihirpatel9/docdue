@@ -1,12 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-/** How far ahead we warn. Chosen so there is still time to actually renew. */
-export const REMINDER_OFFSETS = [30, 7, 0] as const;
-
 const ANDROID_CHANNEL = 'expiry-reminders';
-/** Local hour to fire at. Morning, so it lands in the day's first phone check. */
-const REMINDER_HOUR = 9;
+/** Fallback hour when no preference is stored. Morning, so it lands in the day's first phone check. */
+export const DEFAULT_REMINDER_HOUR = 9;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -44,9 +41,13 @@ export async function ensureNotificationSetup(): Promise<boolean> {
  * 09:00 in the phone's own timezone. Built with local Date parts rather than
  * from an ISO string so it lands at 9am where the user actually is.
  */
-export function reminderDate(expiresOn: string, offsetDays: number): Date {
+export function reminderDate(
+  expiresOn: string,
+  offsetDays: number,
+  hour: number = DEFAULT_REMINDER_HOUR
+): Date {
   const [year, month, day] = expiresOn.split('-').map(Number);
-  return new Date(year, month - 1, day - offsetDays, REMINDER_HOUR, 0, 0, 0);
+  return new Date(year, month - 1, day - offsetDays, hour, 0, 0, 0);
 }
 
 function reminderBody(title: string, offsetDays: number): string {
@@ -66,11 +67,12 @@ export async function scheduleReminder(
   title: string,
   expiresOn: string,
   offsetDays: number,
+  hour: number = DEFAULT_REMINDER_HOUR,
   now: Date = new Date()
 ): Promise<string | null> {
   if (Platform.OS === 'web') return null;
 
-  const fireAt = reminderDate(expiresOn, offsetDays);
+  const fireAt = reminderDate(expiresOn, offsetDays, hour);
   if (fireAt.getTime() <= now.getTime()) return null;
 
   return Notifications.scheduleNotificationAsync({

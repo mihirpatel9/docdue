@@ -5,7 +5,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
  * existing block — someone's phone is already at that version and will never
  * replay it.
  */
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 /**
  * Schema notes that are load-bearing, not decoration:
@@ -59,6 +59,22 @@ CREATE INDEX reminders_by_document ON reminders (document_id);
 CREATE UNIQUE INDEX reminders_unique_offset ON reminders (document_id, offset_days) WHERE deleted_at IS NULL;
 `;
 
+/**
+ * Preferences live in the vault rather than in AsyncStorage so they inherit the
+ * same encryption as the documents. Which reminders a person has switched on is
+ * itself a small disclosure — "warns me about a visa" says something.
+ *
+ * A key/value table, not a one-row table with a column per setting: adding a
+ * preference must not be a schema migration everyone has to replay.
+ */
+const V2 = `
+CREATE TABLE settings (
+  key        TEXT PRIMARY KEY NOT NULL,
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+`;
+
 export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   // These run on EVERY open, before the version check. Foreign keys are OFF by
   // default in SQLite and are a per-connection setting, not a stored one — put
@@ -75,6 +91,11 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   if (version === 0) {
     await db.execAsync(V1);
     version = 1;
+  }
+
+  if (version === 1) {
+    await db.execAsync(V2);
+    version = 2;
   }
 
   await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
