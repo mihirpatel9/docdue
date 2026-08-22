@@ -55,19 +55,19 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Expiry Vault uses the camera so you can photograph a document instead of typing its details."
+          "cameraPermission": "Expiry Vault uses the camera so you can attach a photo of a document to its entry. The photo stays on this device."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Expiry Vault reads photos you pick so it can find the expiry date on a document."
+          "photosPermission": "Expiry Vault uses a photo you choose so you can attach a picture of a document to its entry. Nothing is uploaded."
         }
       ],
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Expiry Vault uses Face ID to keep your documents private."
+          "faceIDPermission": "Expiry Vault uses Face ID to unlock your encrypted documents."
         }
       ],
       "expo-notifications"
