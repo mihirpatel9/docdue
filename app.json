@@ -2,6 +2,7 @@
   "expo": {
     "name": "Expiry Vault",
     "slug": "expiry-vault",
+    "owner": "mihirpatel9",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -85,9 +86,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "15ac0a97-6e7f-421a-95bf-0e6bdde1c824"
+        "projectId": "7ec730cb-a954-430b-ad4d-5b7c2bcf456e"
       }
-    },
-    "owner": "mihirpatel99"
+    }
   }
 }
