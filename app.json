@@ -1,16 +1,19 @@
 {
   "expo": {
-    "name": "ExpiryVault",
-    "slug": "ExpiryVault",
+    "name": "Expiry Vault",
+    "slug": "expiry-vault",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "expiryvault",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.mihirpatel.expiryvault",
+      "supportsTablet": true
     },
     "android": {
+      "package": "com.mihirpatel.expiryvault",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -32,7 +35,28 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Expiry Vault uses the camera so you can photograph a document instead of typing its details."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Expiry Vault reads photos you pick so it can find the expiry date on a document."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Expiry Vault uses Face ID to keep your documents private."
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
