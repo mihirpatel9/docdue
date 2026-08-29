@@ -28,11 +28,6 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ]
@@ -64,15 +59,10 @@
         }
       ],
       [
-        "expo-camera",
-        {
-          "cameraPermission": "Expiry Vault uses the camera so you can attach a photo of a document to its entry. The photo stays on this device."
-        }
-      ],
-      [
         "expo-image-picker",
         {
-          "photosPermission": "Expiry Vault uses a photo you choose so you can attach a picture of a document to its entry. Nothing is uploaded."
+          "photosPermission": "Expiry Vault uses a photo you choose so you can attach a picture of a document to its entry. Nothing is uploaded.",
+          "cameraPermission": "Expiry Vault opens the camera so you can photograph a document. The photo goes straight into the encrypted vault on this device."
         }
       ],
       [

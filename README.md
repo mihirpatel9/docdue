@@ -1,56 +1,77 @@
-# Welcome to your Expo app 👋
+# Expiry Vault
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Passports, licences, insurance, registrations — the documents that quietly
+expire and cost you a border crossing, a fine, or a claim. Expiry Vault keeps
+their dates and photographs on your phone, encrypted, and tells you before they
+lapse.
 
-## Get started
+It has no account, no server, and no copy of your documents anywhere but the
+device in your hand.
 
-1. Install dependencies
+## What it does
 
-   ```bash
-   npm install
-   ```
+- **Tracks expiry dates** with a grouped, searchable list — expired, expiring
+  soon, and everything else.
+- **Stores the photograph inside the encrypted database**, not as a loose file
+  next to it. The picture of a passport is the sensitive part.
+- **Reminds you** ahead of each expiry through local notifications. No push
+  server is involved.
+- **Locks behind biometrics** — or the device passcode, on phones with no
+  fingerprint enrolled.
+- **Exports an encrypted backup** keyed by a passphrase you choose and the app
+  never stores. Losing the phone otherwise loses the vault, by design.
 
-2. Start the app
+## Security
 
-   ```bash
-   npx expo start
-   ```
+The vault is a SQLCipher database (AES-256) whose key lives in the platform
+keystore as `WHEN_UNLOCKED_THIS_DEVICE_ONLY`, so it is deliberately excluded
+from iCloud and Android backups. `src/db/init.ts` verifies `PRAGMA
+cipher_version` at startup and **refuses to open the vault** if encryption is
+not real — there is no "continue unencrypted" path.
 
-In the output, you'll find options to open the app in a
+**[`SECURITY.md`](SECURITY.md) is the load-bearing document.** It states the
+threat model, and just as importantly what the app does *not* defend against.
+It is meant to be argued with rather than quietly eroded: if a change weakens
+something it promises, the promise gets rewritten in the same commit.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Expo SDK 57 · React Native 0.86 · expo-router · TypeScript · SQLCipher via
+`expo-sqlite`. React Compiler and typed routes are on.
 
-## Get a fresh project
-
-When you're ready, run:
+## Development
 
 ```bash
-npm run reset-project
+npm install
+npx expo start        # requires a development build, not Expo Go
+npm run typecheck     # tsc --noEmit
+npm test              # node --experimental-strip-types, no emulator needed
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Expo Go cannot run this app — SQLCipher, biometrics, and secure storage are all
+native. Build a development client with EAS:
 
-### Other setup steps
+```bash
+eas build --profile development --platform android
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+`npx expo start --web` renders the layout only. It runs the `IS_INSECURE_PREVIEW`
+path with no SQLCipher, no lock, and no notifications, so it must never be used
+to claim the security model works.
 
-## Learn more
+### Verifying encryption is real
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+adb shell run-as com.mihirpatel.expiryvault \
+  cat files/SQLite/expiry-vault.db | head -c 16 | od -c
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Random bytes mean SQLCipher is working. If it ever reads `SQLite format 3`, the
+vault is shipping plaintext.
 
-## Join the community
+Note that `adb shell screencap` returns a 0-byte file. That is `expo-screen-capture`
+setting `FLAG_SECURE` — the app working, not a bug.
 
-Join our community of developers creating universal apps.
+## Licence
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+MIT — see [LICENSE](LICENSE).

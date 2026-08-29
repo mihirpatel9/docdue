@@ -16,7 +16,7 @@ argue with it rather than quietly erode it.
 | A backup file falling into someone else's hands | Exports are a separate SQLCipher database keyed by a user-chosen passphrase (PBKDF2-HMAC-SHA512, 256k iterations, AES-256). The passphrase is never stored. |
 | Screenshots / app-switcher thumbnails | `expo-screen-capture` blocks capture on Android and hides the preview on iOS. |
 | Malicious or careless third-party SDK | There are none. No analytics, no crash reporting, no ad SDK, no telemetry. |
-| Data leaving the device | Nothing is transmitted. The app has no backend and makes no network calls. |
+| Data leaving the device | No document ever is. The one network call the app makes is EAS Update's check for a new JS bundle — see "The update channel" below. |
 
 ## What we explicitly do NOT defend against
 
@@ -72,9 +72,24 @@ any kind, opens without a challenge.
 holding your unlocked phone; encryption stops someone reading the disk. Neither
 substitutes for the other, so a bypass of one does not defeat the other.
 
-**No accounts, no server, no network.** The most reliable way to not leak
-someone's passport number is to never hold it. This is why cloud sync is not in
-v1 — see below.
+**No accounts, no server, no user data in flight.** The most reliable way to
+not leak someone's passport number is to never hold it. This is why cloud sync
+is not in v1 — see below.
+
+**The update channel.** This document said "makes no network calls" until EAS
+Update was added, and that sentence had to change rather than be quietly kept.
+On launch the app asks `u.expo.dev` whether a newer JS bundle exists, which
+sends the runtime version, the platform, and an Expo-generated install ID. It
+sends no document, no photograph, no passphrase, and nothing derived from the
+vault — the request is made before the vault is even opened. The manifest
+therefore carries `INTERNET`, and it is the only permission the app holds that
+a reader of this document would not have predicted.
+
+The trade is deliberate: a security bug in a local-first app is otherwise
+unfixable for anyone who does not notice a store update, and this app is
+distributed to people who have no reason to check. Accepting one metadata
+request to Expo buys the ability to fix a broken lock in minutes. If that trade
+stops being worth it, remove `expo-updates` — nothing else depends on it.
 
 ## Open decision: document text extraction
 

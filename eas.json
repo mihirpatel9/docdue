@@ -28,6 +28,13 @@
         "buildType": "app-bundle"
       },
       "channel": "production"
+    },
+    "ios-simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true
+      },
+      "channel": "preview"
     }
   },
   "submit": {
