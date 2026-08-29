@@ -2,10 +2,15 @@ import * as Crypto from 'expo-crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { DEFAULT_SETTINGS } from '@/db/settings';
-import { deleteImage } from '@/lib/images';
 import { cancelReminder, reminderDate, scheduleReminder } from '@/lib/notifications';
 
-import type { DocumentRow, NewDocument, ReminderRow } from './types';
+import type {
+  DocumentImage,
+  DocumentListRow,
+  DocumentRow,
+  NewDocument,
+  ReminderRow,
+} from './types';
 
 const nowIso = () => new Date().toISOString();
 
@@ -21,9 +26,54 @@ export const DEFAULT_PLAN: ReminderPlan = {
  * Documents that still count, soonest expiry first — the only order this app's
  * home screen ever wants.
  */
-export async function listDocuments(db: SQLiteDatabase): Promise<DocumentRow[]> {
-  return db.getAllAsync<DocumentRow>(
-    `SELECT * FROM documents WHERE deleted_at IS NULL ORDER BY expires_on ASC`
+export async function listDocuments(db: SQLiteDatabase): Promise<DocumentListRow[]> {
+  // The join reports whether a photo exists without reading it. Selecting the
+  // base64 here would pull every document's picture into memory to render a
+  // list that only shows a thumbnail badge.
+  return db.getAllAsync<DocumentListRow>(
+    `SELECT d.*, (i.document_id IS NOT NULL) AS has_image
+       FROM documents d
+       LEFT JOIN document_images i ON i.document_id = d.id
+      WHERE d.deleted_at IS NULL
+      ORDER BY d.expires_on ASC`
+  );
+}
+
+/** Read on demand, by the one screen that actually displays the photo. */
+export async function getDocumentImage(
+  db: SQLiteDatabase,
+  documentId: string
+): Promise<DocumentImage | null> {
+  return db.getFirstAsync<DocumentImage>(
+    `SELECT data, mime FROM document_images WHERE document_id = ?`,
+    documentId
+  );
+}
+
+/** `null` clears the photo; `undefined` means "leave whatever is there". */
+async function writeImage(
+  db: SQLiteDatabase,
+  documentId: string,
+  image: DocumentImage | null | undefined
+): Promise<void> {
+  if (image === undefined) return;
+
+  if (image === null) {
+    await db.runAsync(`DELETE FROM document_images WHERE document_id = ?`, documentId);
+    return;
+  }
+
+  const ts = nowIso();
+  await db.runAsync(
+    `INSERT INTO document_images (document_id, data, mime, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT (document_id) DO UPDATE SET data = excluded.data, mime = excluded.mime,
+                                             updated_at = excluded.updated_at`,
+    documentId,
+    image.data,
+    image.mime,
+    ts,
+    ts
   );
 }
 
@@ -66,7 +116,7 @@ export async function createDocument(
     `INSERT INTO documents
        (id, user_id, title, kind, issuer, reference, expires_on, issued_on, notes,
         image_path, created_at, updated_at, deleted_at, synced_at)
-     VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)`,
+     VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, NULL, NULL)`,
     id,
     input.title,
     input.kind,
@@ -75,11 +125,11 @@ export async function createDocument(
     input.expiresOn,
     input.issuedOn ?? null,
     input.notes ?? null,
-    input.imagePath ?? null,
     ts,
     ts
   );
 
+  await writeImage(db, id, input.image);
   await syncReminders(db, id, input.title, input.expiresOn, plan);
   return id;
 }
@@ -90,17 +140,10 @@ export async function updateDocument(
   input: NewDocument,
   plan: ReminderPlan = DEFAULT_PLAN
 ): Promise<void> {
-  // The photo that is being replaced has to go before the column is overwritten,
-  // or its path is lost and the file is orphaned in app storage forever.
-  const previous = await getDocument(db, id);
-  if (previous?.image_path && previous.image_path !== (input.imagePath ?? null)) {
-    await deleteImage(previous.image_path);
-  }
-
   await db.runAsync(
     `UPDATE documents
         SET title = ?, kind = ?, issuer = ?, reference = ?, expires_on = ?,
-            issued_on = ?, notes = ?, image_path = ?, updated_at = ?, synced_at = NULL
+            issued_on = ?, notes = ?, updated_at = ?, synced_at = NULL
       WHERE id = ?`,
     input.title,
     input.kind,
@@ -109,11 +152,13 @@ export async function updateDocument(
     input.expiresOn,
     input.issuedOn ?? null,
     input.notes ?? null,
-    input.imagePath ?? null,
     nowIso(),
     id
   );
 
+  // Replacing a photo is now an UPSERT inside the vault, so there is no file to
+  // orphan and no ordering hazard: the old base64 is overwritten in place.
+  await writeImage(db, id, input.image);
   await syncReminders(db, id, input.title, input.expiresOn, plan);
 }
 
@@ -127,10 +172,9 @@ export async function updateDocument(
  */
 export async function deleteDocument(db: SQLiteDatabase, id: string): Promise<void> {
   const ts = nowIso();
-  const existing = await getDocument(db, id);
 
   await clearReminders(db, id, ts);
-  await deleteImage(existing?.image_path ?? null);
+  await db.runAsync(`DELETE FROM document_images WHERE document_id = ?`, id);
 
   await db.runAsync(
     `UPDATE documents
@@ -214,7 +258,6 @@ export async function rescheduleAll(db: SQLiteDatabase, plan: ReminderPlan): Pro
  * their data wants the documents gone, not their theme reset.
  */
 export async function eraseAllDocuments(db: SQLiteDatabase): Promise<void> {
-  const documents = await db.getAllAsync<DocumentRow>(`SELECT * FROM documents`);
   const reminders = await db.getAllAsync<ReminderRow>(
     `SELECT * FROM reminders WHERE notification_id IS NOT NULL`
   );
@@ -222,11 +265,12 @@ export async function eraseAllDocuments(db: SQLiteDatabase): Promise<void> {
   for (const reminder of reminders) {
     if (reminder.notification_id) await cancelReminder(reminder.notification_id);
   }
-  for (const doc of documents) {
-    await deleteImage(doc.image_path);
-  }
 
   // A real DELETE, not a tombstone: this is the "leave no trace" action, and a
   // vault full of tombstones naming every document you ever held is a trace.
-  await db.execAsync(`DELETE FROM reminders; DELETE FROM documents;`);
+  // Photos go with them — the cascade would handle it, but naming the table
+  // here keeps the erase honest even if foreign keys are ever off.
+  await db.execAsync(
+    `DELETE FROM document_images; DELETE FROM reminders; DELETE FROM documents;`
+  );
 }

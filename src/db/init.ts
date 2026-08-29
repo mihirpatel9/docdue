@@ -1,8 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
+import { removeLegacyImageFolder } from '@/lib/images';
 import { getOrCreateDatabaseKey } from '@/lib/secure-key';
 
+import { adoptLooseImages } from './adopt-images';
 import { migrateDbIfNeeded } from './migrations';
 
 /**
@@ -65,4 +67,11 @@ export async function openVault(db: SQLiteDatabase): Promise<void> {
   await db.getFirstAsync('SELECT count(*) FROM sqlite_master');
 
   await migrateDbIfNeeded(db);
+
+  // Only after the schema is in place and the connection is proven encrypted:
+  // this reads photos off the filesystem and writes them into the vault, so
+  // running it against an unkeyed database would move them out of one plaintext
+  // store and into another.
+  const adopted = await adoptLooseImages(db);
+  if (adopted > 0) await removeLegacyImageFolder();
 }

@@ -33,10 +33,16 @@ function matchesQuery(doc: DocumentRow, query: string): boolean {
 
 const URGENCY_ORDER: Record<Urgency, number> = { expired: 0, critical: 1, soon: 2, ok: 3 };
 
-export type Section = {
+/**
+ * Generic over the row so the list can pass the joined `DocumentListRow`
+ * through and get it back intact. Grouping only ever reads the columns on
+ * `DocumentRow`, so widening it here would force every caller to the narrowest
+ * shape and cost the list its `has_image` flag.
+ */
+export type Section<T extends DocumentRow = DocumentRow> = {
   urgency: Urgency;
   title: string;
-  data: DocumentRow[];
+  data: T[];
 };
 
 /**
@@ -47,11 +53,11 @@ export type Section = {
  * title reorders rows *within* "This week", it does not mix a lapsed passport
  * into next year's warranties.
  */
-export function buildSections(
-  documents: DocumentRow[],
+export function buildSections<T extends DocumentRow>(
+  documents: T[],
   filters: Filters,
   options: { showExpired: boolean; now?: Date } = { showExpired: true }
-): Section[] {
+): Section<T>[] {
   const now = options.now ?? new Date();
 
   const visible = documents.filter((doc) => {
@@ -67,7 +73,7 @@ export function buildSections(
     return matchesQuery(doc, filters.query);
   });
 
-  const compare = (a: DocumentRow, b: DocumentRow) => {
+  const compare = (a: T, b: T) => {
     if (filters.sort === 'title') return a.title.localeCompare(b.title);
     if (filters.sort === 'kind') {
       const byKind = a.kind.localeCompare(b.kind);
@@ -76,7 +82,7 @@ export function buildSections(
     return a.expires_on.localeCompare(b.expires_on);
   };
 
-  const buckets = new Map<Urgency, DocumentRow[]>();
+  const buckets = new Map<Urgency, T[]>();
   for (const doc of visible) {
     const urgency = urgencyOf(daysUntilExpiry(doc.expires_on, now));
     const bucket = buckets.get(urgency);

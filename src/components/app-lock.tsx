@@ -48,15 +48,17 @@ export function AppLock({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const [hasHardware, isEnrolled] = await Promise.all([
-      LocalAuthentication.hasHardwareAsync(),
-      LocalAuthentication.isEnrolledAsync(),
-    ]);
-
-    // No biometric hardware, or none enrolled: the phone's own lock screen is
-    // the only gate available. Refusing entry here would lock people out of
-    // their own documents, which is a worse outcome than the risk it averts.
-    if (!hasHardware || !isEnrolled) {
+    // What the device can actually challenge with — NOT "is a fingerprint
+    // enrolled". Asking the narrower question was a hole: a phone secured with
+    // a PIN and no fingerprint reported "not enrolled", fell through to
+    // `unavailable`, and `unavailable` renders the vault. The lock screen was
+    // absent on exactly the devices that had a working passcode to offer.
+    //
+    // SecurityLevel.NONE means the phone itself has no lock at all. There is
+    // genuinely nothing to authenticate against there, and refusing entry would
+    // lock people out of their own documents to no benefit.
+    const level = await LocalAuthentication.getEnrolledLevelAsync();
+    if (level === LocalAuthentication.SecurityLevel.NONE) {
       setState('unavailable');
       return;
     }
@@ -64,8 +66,9 @@ export function AppLock({ children }: { children: React.ReactNode }) {
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Unlock Expiry Vault',
       cancelLabel: 'Cancel',
-      // Device passcode stays enabled as a fallback: a wet or injured finger
-      // must not mean losing access to your own passport details.
+      // Load-bearing twice over: it lets a wet or injured finger fall back to
+      // the passcode, and on a PIN-only phone it is the ONLY thing that can
+      // satisfy the prompt at all.
       disableDeviceFallback: false,
     });
 

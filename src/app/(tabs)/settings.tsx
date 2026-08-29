@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BackupPanel } from '@/components/backup-panel';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
@@ -274,6 +275,13 @@ export default function SettingsScreen() {
           />
         </Section>
 
+        <Section title="Backup">
+          <BackupPanel
+            plan={{ offsets: settings.reminderOffsets, hour: settings.reminderHour }}
+            onImported={() => setErased(false)}
+          />
+        </Section>
+
         <Section title="Data">
           {erased ? (
             <ThemedText type="small" style={{ color: theme.success }}>
@@ -319,8 +327,8 @@ export default function SettingsScreen() {
             onPress={(event) => event.stopPropagation()}>
             <ThemedText type="heading">Erase everything?</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Every document, reminder and photo is deleted from this device. There is no backup and
-              no way to undo it.
+              Every document, reminder and photo is deleted from this device. Nothing here can undo
+              it — only a backup file you made earlier can.
             </ThemedText>
             <View style={styles.dialogActions}>
               <Button
