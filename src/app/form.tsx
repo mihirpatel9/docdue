@@ -1,4 +1,3 @@
-import * as Crypto from 'expo-crypto';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
@@ -12,12 +11,12 @@ import { Chip } from '@/components/ui/chip';
 import { DateField } from '@/components/ui/date-field';
 import { TextField } from '@/components/ui/text-field';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { createDocument, getDocument, updateDocument } from '@/db/documents';
+import { createDocument, getDocument, getDocumentImage, updateDocument } from '@/db/documents';
 import { DOCUMENT_KINDS, KIND_LABELS, type DocumentKind } from '@/db/types';
 import { useSettings } from '@/hooks/use-settings';
 import { useResolvedScheme, useTheme } from '@/hooks/use-theme';
 import { successFeedback, warningFeedback } from '@/lib/haptics';
-import { persistImage } from '@/lib/images';
+import { imageDataUri, readImageForVault } from '@/lib/images';
 import { kindStyle } from '@/lib/kinds';
 
 /**
@@ -43,10 +42,21 @@ export default function DocumentFormScreen() {
   const [issuer, setIssuer] = useState('');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
+  /**
+   * What the field shows: a `data:` URI for a photo already in the vault, or a
+   * `file:` URI for one just picked and not yet read.
+   */
   const [imageUri, setImageUri] = useState<string | null>(null);
 
-  /** The photo as it is stored right now, so an untouched one is never re-copied. */
-  const [storedImage, setStoredImage] = useState<string | null>(null);
+  /**
+   * Distinguishes the three outcomes the data layer needs to tell apart —
+   * picked a new one, cleared the old one, touched neither. Comparing URIs
+   * cannot do it: an untouched vault photo and a freshly picked file are both
+   * just strings, and re-reading the former on every save would rewrite
+   * megabytes of base64 because someone fixed a typo in the title.
+   */
+  const [pickedNew, setPickedNew] = useState(false);
+  const [hadStoredImage, setHadStoredImage] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; expiresOn?: string; save?: string }>({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(editing);
@@ -67,9 +77,15 @@ export default function DocumentFormScreen() {
       setIssuer(doc.issuer ?? '');
       setReference(doc.reference ?? '');
       setNotes(doc.notes ?? '');
-      setImageUri(doc.image_path);
-      setStoredImage(doc.image_path);
-      setLoading(false);
+
+      getDocumentImage(db, id).then((image) => {
+        if (!active) return;
+        if (image) {
+          setImageUri(imageDataUri(image));
+          setHadStoredImage(true);
+        }
+        setLoading(false);
+      });
     });
 
     return () => {
@@ -92,12 +108,11 @@ export default function DocumentFormScreen() {
     setErrors({});
 
     try {
-      // Copied only now, at save. Doing it at pick time would leave an orphaned
-      // image in app storage every time someone opened the form and backed out.
-      const imagePath =
-        imageUri && imageUri !== storedImage
-          ? await persistImage(imageUri, id ?? Crypto.randomUUID())
-          : imageUri;
+      // Read only now, at save. Doing it at pick time would hold a megabyte of
+      // base64 in state for a form the user may well back out of.
+      let image;
+      if (pickedNew && imageUri) image = await readImageForVault(imageUri);
+      else if (!imageUri && hadStoredImage) image = null;
 
       const input = {
         title: title.trim(),
@@ -109,7 +124,7 @@ export default function DocumentFormScreen() {
         issuer: issuer.trim() || null,
         reference: reference.trim() || null,
         notes: notes.trim() || null,
-        imagePath,
+        image,
       };
 
       const plan = { offsets: settings.reminderOffsets, hour: settings.reminderHour };
@@ -225,7 +240,13 @@ export default function DocumentFormScreen() {
             optional
           />
 
-          <PhotoField uri={imageUri} onChange={setImageUri} />
+          <PhotoField
+            uri={imageUri}
+            onChange={(next) => {
+              setImageUri(next);
+              setPickedNew(next !== null);
+            }}
+          />
 
           {errors.save ? (
             <ThemedText type="small" style={{ color: theme.danger }}>

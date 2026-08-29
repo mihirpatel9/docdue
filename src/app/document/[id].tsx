@@ -10,7 +10,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Elevation, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { deleteDocument, getDocument, listReminders } from '@/db/documents';
+import { deleteDocument, getDocument, getDocumentImage, listReminders } from '@/db/documents';
 import { IS_INSECURE_PREVIEW } from '@/db/init';
 import { KIND_LABELS, type DocumentRow, type ReminderRow } from '@/db/types';
 import { offsetLabel } from '@/db/settings';
@@ -23,6 +23,7 @@ import {
   urgencyOf,
 } from '@/lib/expiry';
 import { successFeedback, tapFeedback } from '@/lib/haptics';
+import { imageDataUri } from '@/lib/images';
 
 function DetailRow({ icon, label, value }: { icon: 'calendar-blank-outline' | 'office-building-outline' | 'pound' | 'clock-outline'; label: string; value: string }) {
   const theme = useTheme();
@@ -63,6 +64,8 @@ export default function DocumentDetailScreen() {
 
   const [doc, setDoc] = useState<DocumentRow | null>(null);
   const [reminders, setReminders] = useState<ReminderRow[]>([]);
+  /** The decrypted photo as a data URI. Held only while this screen is mounted. */
+  const [photo, setPhoto] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -73,15 +76,22 @@ export default function DocumentDetailScreen() {
     useCallback(() => {
       let active = true;
 
-      Promise.all([getDocument(db, id), listReminders(db, id)]).then(([row, rows]) => {
-        if (!active) return;
-        setDoc(row);
-        setReminders(rows);
-        setLoaded(true);
-      });
+      Promise.all([getDocument(db, id), listReminders(db, id), getDocumentImage(db, id)]).then(
+        ([row, rows, image]) => {
+          if (!active) return;
+          setDoc(row);
+          setReminders(rows);
+          setPhoto(image ? imageDataUri(image) : null);
+          setLoaded(true);
+        }
+      );
 
       return () => {
         active = false;
+        // Drops the decrypted base64 as soon as the screen goes away, rather
+        // than leaving it resident for as long as the navigator caches this
+        // route.
+        setPhoto(null);
       };
     }, [db, id])
   );
@@ -144,10 +154,10 @@ export default function DocumentDetailScreen() {
           </View>
         </View>
 
-        {doc.image_path ? (
+        {photo ? (
           <Panel>
             <Image
-              source={{ uri: doc.image_path }}
+              source={{ uri: photo }}
               style={styles.photo}
               contentFit="cover"
               transition={180}
@@ -258,7 +268,7 @@ export default function DocumentDetailScreen() {
             <ThemedText type="heading">Delete this document?</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               {doc.title} and its reminders
-              {doc.image_path ? ' and photo' : ''} will be removed from this device. This cannot be
+              {photo ? ' and photo' : ''} will be removed from this device. This cannot be
               undone.
             </ThemedText>
             <View style={styles.dialogActions}>

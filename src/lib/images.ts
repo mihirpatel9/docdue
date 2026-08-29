@@ -4,52 +4,67 @@ import { Platform } from 'react-native';
 
 const FOLDER = 'document-images';
 
-/**
- * Where document photos live.
- *
- * A caveat worth stating plainly: SQLCipher encrypts the database, not this
- * folder. The image itself is protected by the OS file-protection class of the
- * app's private container — strong on a locked iPhone, weaker on a rooted
- * Android — but it is not covered by the vault's own key. That is why the app
- * stores a photo of a document and never asks for the document number twice.
- */
-function imagesDirectory(): Directory {
-  const dir = new Directory(Paths.document, FOLDER);
-  if (!dir.exists) dir.create({ intermediates: true });
-  return dir;
-}
+const MIME_BY_EXTENSION: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  heic: 'image/heic',
+  webp: 'image/webp',
+};
 
 function extensionOf(uri: string): string {
   const match = /\.(jpe?g|png|heic|webp)(\?|$)/i.exec(uri);
   return match ? match[1].toLowerCase() : 'jpg';
 }
 
-/**
- * Copies a picked or captured image into app storage and returns the stored
- * URI. The picker hands back a URI in a cache directory the OS is free to
- * empty; keeping that reference would give the user a document whose photo
- * silently disappears a week later.
- *
- * On web there is no such directory to copy into, and the preview build is not
- * the product — the transient URI is returned unchanged.
- */
-export async function persistImage(sourceUri: string, documentId: string): Promise<string> {
-  if (Platform.OS === 'web') return sourceUri;
-
-  const directory = imagesDirectory();
-  const target = new File(directory, `${documentId}-${Date.now()}.${extensionOf(sourceUri)}`);
-  await new File(sourceUri).copy(target);
-  return target.uri;
+/** Defaults to JPEG: the pickers hand back JPEG unless told otherwise. */
+export function mimeForUri(uri: string): string {
+  return MIME_BY_EXTENSION[extensionOf(uri)] ?? 'image/jpeg';
 }
 
-/** Best-effort. A photo already gone is the state we wanted anyway. */
-export async function deleteImage(uri: string | null): Promise<void> {
-  if (!uri || Platform.OS === 'web') return;
+/**
+ * Reads a picked image into memory as base64, ready to be written into the
+ * encrypted vault.
+ *
+ * This replaces the old copy-to-app-storage step, and the difference is the
+ * whole point: a photo of a passport now lives inside SQLCipher with everything
+ * else, instead of sitting beside the database as a plain file that a rooted
+ * phone or a filesystem dump could read while the text stayed sealed.
+ *
+ * The picker's own copy in the OS cache directory is left alone — it is not
+ * ours to manage, and the OS reclaims it. Nothing we write persists outside the
+ * database.
+ */
+export async function readImageForVault(
+  sourceUri: string
+): Promise<{ data: string; mime: string }> {
+  const data = await new File(sourceUri).base64();
+  return { data, mime: mimeForUri(sourceUri) };
+}
+
+/**
+ * What `<Image>` wants. A data URI keeps the decrypted bytes in memory for as
+ * long as the view is mounted and never touches disk — writing a temp file to
+ * render it would undo the encryption this migration just bought.
+ */
+export function imageDataUri(image: { data: string; mime: string }): string {
+  return `data:${image.mime};base64,${image.data}`;
+}
+
+/**
+ * Removes the legacy photo folder once every file in it has been adopted into
+ * the vault. Called after the V3 adoption sweep; a no-op on a fresh install
+ * that never had one.
+ */
+export async function removeLegacyImageFolder(): Promise<void> {
+  if (Platform.OS === 'web') return;
+
   try {
-    const file = new File(uri);
-    if (file.exists) file.delete();
+    const dir = new Directory(Paths.document, FOLDER);
+    if (dir.exists) dir.delete();
   } catch {
-    // Missing, already removed, or outside our directory. Nothing to undo.
+    // Still holding a file the sweep could not adopt. It will be retried on the
+    // next launch, and an empty directory is not worth failing a startup over.
   }
 }
 

@@ -36,11 +36,33 @@ export type DocumentRow = {
   expires_on: string;
   issued_on: string | null;
   notes: string | null;
+  /**
+   * Legacy. Photos moved into `document_images` in migration V3; the adoption
+   * sweep nulls this as it goes. Kept because a column an old row still points
+   * at cannot be dropped until every install has completed that sweep, and
+   * because dropping it would rewrite the table for no gain.
+   */
   image_path: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
   synced_at: string | null;
+};
+
+/**
+ * A document photo, encrypted at rest with everything else in the vault.
+ *
+ * `data` is base64 rather than raw bytes — see the V3 comment in migrations.ts.
+ */
+export type DocumentImage = {
+  data: string;
+  mime: string;
+};
+
+/** A list row, plus whether a photo hangs off it. */
+export type DocumentListRow = DocumentRow & {
+  /** SQLite has no boolean; this is 0 or 1 from a LEFT JOIN. */
+  has_image: number;
 };
 
 /** What a caller supplies to create a document — the rest is bookkeeping. */
@@ -52,7 +74,12 @@ export type NewDocument = {
   reference?: string | null;
   issuedOn?: string | null;
   notes?: string | null;
-  imagePath?: string | null;
+  /**
+   * `undefined` leaves an existing photo untouched on update; `null` removes
+   * it. The two cannot be collapsed — an edit that only changed the title would
+   * otherwise silently delete the picture.
+   */
+  image?: DocumentImage | null;
 };
 
 export type ReminderRow = {

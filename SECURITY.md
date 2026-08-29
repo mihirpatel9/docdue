@@ -10,9 +10,10 @@ argue with it rather than quietly erode it.
 | Threat | Defence |
 |---|---|
 | Phone stolen while locked | Data encrypted with AES-256 (SQLCipher). Key is in the Secure Enclave / Android Keystore and unreadable while the device is locked. |
-| Someone holding your unlocked phone | Biometric gate on launch, and again after 15 seconds in the background. |
-| Forensic extraction of the app sandbox | The database file is ciphertext. Without the keystore entry it is noise. |
+| Someone holding your unlocked phone | Device authentication on launch, and again after 15 seconds in the background — biometric where enrolled, device passcode otherwise. |
+| Forensic extraction of the app sandbox | The database file is ciphertext, and document photos are inside it. Without the keystore entry the whole sandbox is noise. |
 | Backup or clone restored to another device | The key is `THIS_DEVICE_ONLY`, so it is excluded from iCloud Keychain and encrypted backups. The restored database cannot be decrypted. |
+| A backup file falling into someone else's hands | Exports are a separate SQLCipher database keyed by a user-chosen passphrase (PBKDF2-HMAC-SHA512, 256k iterations, AES-256). The passphrase is never stored. |
 | Screenshots / app-switcher thumbnails | `expo-screen-capture` blocks capture on Android and hides the preview on iOS. |
 | Malicious or careless third-party SDK | There are none. No analytics, no crash reporting, no ad SDK, no telemetry. |
 | Data leaving the device | Nothing is transmitted. The app has no backend and makes no network calls. |
@@ -38,10 +39,34 @@ plaintext. `src/db/init.ts` checks `PRAGMA cipher_version` returns a real value
 and **refuses to open the vault otherwise**. There is deliberately no
 "continue unencrypted" path.
 
-**Losing the phone means losing the data, on purpose.** The key is
-`WHEN_UNLOCKED_THIS_DEVICE_ONLY`. It does not sync to iCloud and does not ride
-along in a backup. The alternative — a key on Apple's servers — is a weaker
-promise than the one this app makes.
+**Losing the phone means losing the data unless the user made a backup.** The
+vault key is `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. It does not sync to iCloud and
+does not ride along in a device backup. The alternative — a key on Apple's
+servers — is a weaker promise than the one this app makes.
+
+The escape hatch is an explicit, user-initiated export: a second SQLCipher
+database keyed by a passphrase the user chooses and the app never stores
+(`src/lib/vault-export.ts`). This is deliberately NOT the device key travelling
+under another name — it is separate key material, created knowingly, and a
+forgotten passphrase means an unreadable file. There is no recovery path,
+because a recovery path is a backdoor with better marketing.
+
+The export is written to the cache directory and deleted as soon as the share
+sheet closes, so an encrypted copy of the whole vault never lingers.
+
+**Photos live inside the vault, not beside it.** Until v3 a document's
+photograph was a loose file in the app container: the database was encrypted
+and the picture of the passport next to it was not. That was the wrong way
+round — the photo is the sensitive part. Photos are now rows in the encrypted
+database (`document_images`), so one key covers everything, on device and in
+exports alike.
+
+**A device passcode counts as a lock.** The gate asks
+`getEnrolledLevelAsync()`, not "is a fingerprint enrolled". Asking the narrower
+question left a hole: a phone secured with a PIN and no biometric reported "not
+enrolled" and fell through to no lock at all — precisely the devices that had a
+working passcode to offer. Only `SecurityLevel.NONE`, a phone with no lock of
+any kind, opens without a challenge.
 
 **Encryption and the biometric lock are independent.** The lock stops a person
 holding your unlocked phone; encryption stops someone reading the disk. Neither

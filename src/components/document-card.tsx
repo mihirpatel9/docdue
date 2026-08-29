@@ -5,7 +5,7 @@ import { KindTile } from '@/components/kind-tile';
 import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { Elevation, Radius, Spacing } from '@/constants/theme';
-import { KIND_LABELS, type DocumentRow } from '@/db/types';
+import { KIND_LABELS, type DocumentListRow } from '@/db/types';
 import { useTheme } from '@/hooks/use-theme';
 import {
   URGENCY_TOKENS,
@@ -24,7 +24,7 @@ import {
  * alone would be unreadable to anyone with a red-green deficiency, and a number
  * alone reads as neutral until you stop and do the arithmetic.
  */
-function DocumentCardBase({ doc, onPress }: { doc: DocumentRow; onPress: () => void }) {
+function DocumentCardBase({ doc, onPress }: { doc: DocumentListRow; onPress: () => void }) {
   const theme = useTheme();
   const daysLeft = daysUntilExpiry(doc.expires_on);
   const urgency = urgencyOf(daysLeft);
@@ -80,7 +80,7 @@ function DocumentCardBase({ doc, onPress }: { doc: DocumentRow; onPress: () => v
           <ThemedText type="caption" themeColor="textSecondary" numberOfLines={1} style={styles.subtitle}>
             {subtitle}
           </ThemedText>
-          {doc.image_path ? (
+          {doc.has_image ? (
             <Icon name="image-outline" size={14} color={theme.textTertiary} />
           ) : null}
           {doc.notes ? <Icon name="note-text-outline" size={14} color={theme.textTertiary} /> : null}

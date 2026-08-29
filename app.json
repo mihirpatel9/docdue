@@ -77,7 +77,8 @@
           "faceIDPermission": "Expiry Vault uses Face ID to unlock your encrypted documents."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

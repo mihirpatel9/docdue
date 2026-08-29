@@ -15,7 +15,7 @@ import { Icon } from '@/components/ui/icon';
 import { Elevation, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { listDocuments } from '@/db/documents';
 import { IS_INSECURE_PREVIEW } from '@/db/init';
-import type { DocumentRow } from '@/db/types';
+import type { DocumentListRow } from '@/db/types';
 import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { URGENCY_TOKENS, type Urgency } from '@/lib/expiry';
@@ -93,7 +93,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { settings } = useSettings();
 
-  const [documents, setDocuments] = useState<DocumentRow[]>([]);
+  const [documents, setDocuments] = useState<DocumentListRow[]>([]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

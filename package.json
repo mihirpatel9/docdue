@@ -11,6 +11,7 @@
     "expo-crypto": "~57.0.1",
     "expo-dev-client": "~57.0.14",
     "expo-device": "~57.0.1",
+    "expo-document-picker": "~57.0.1",
     "expo-file-system": "~57.0.5",
     "expo-font": "~57.0.1",
     "expo-glass-effect": "~57.0.1",
@@ -23,6 +24,7 @@
     "expo-router": "~57.0.15",
     "expo-screen-capture": "~57.0.2",
     "expo-secure-store": "~57.0.1",
+    "expo-sharing": "~57.0.16",
     "expo-splash-screen": "~57.0.7",
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
@@ -41,16 +43,18 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/expiry.test.mts && node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/grouping.test.mts",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/expiry.test.mts && node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/grouping.test.mts && node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/backup-format.test.mts",
     "typecheck": "tsc --noEmit"
   },
   "private": true

@@ -5,7 +5,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
  * existing block — someone's phone is already at that version and will never
  * replay it.
  */
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 
 /**
  * Schema notes that are load-bearing, not decoration:
@@ -75,6 +75,34 @@ CREATE TABLE settings (
 );
 `;
 
+/**
+ * Photos move INTO the vault.
+ *
+ * Until now a document's picture lived as a loose file in the app container and
+ * only the database was encrypted — so a rooted phone or a filesystem dump gave
+ * up every passport photo in the clear while the text beside it stayed sealed.
+ * That is the wrong way round: the photo IS the sensitive part.
+ *
+ * Stored as base64 TEXT rather than a BLOB. SQLCipher encrypts both identically,
+ * so this costs 33% in size and buys two things: `expo-file-system` hands us
+ * base64 directly, and the value renders as a data URI with no byte conversion
+ * in between. For a handful of document photos the size is irrelevant and the
+ * removed encoding step is a removed class of bug.
+ *
+ * A separate table, not a column on `documents`: the home screen lists every
+ * document on every render, and a photo column would drag megabytes of base64
+ * through a query that only ever needed the title and a date.
+ */
+const V3 = `
+CREATE TABLE document_images (
+  document_id TEXT PRIMARY KEY NOT NULL REFERENCES documents (id) ON DELETE CASCADE,
+  data        TEXT NOT NULL,
+  mime        TEXT NOT NULL,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+`;
+
 export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   // These run on EVERY open, before the version check. Foreign keys are OFF by
   // default in SQLite and are a per-connection setting, not a stored one — put
@@ -96,6 +124,11 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
   if (version === 1) {
     await db.execAsync(V2);
     version = 2;
+  }
+
+  if (version === 2) {
+    await db.execAsync(V3);
+    version = 3;
   }
 
   await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);
