@@ -30,6 +30,10 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ]
     },
@@ -89,6 +93,12 @@
       "eas": {
         "projectId": "7ec730cb-a954-430b-ad4d-5b7c2bcf456e"
       }
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7ec730cb-a954-430b-ad4d-5b7c2bcf456e"
     }
   }
 }
