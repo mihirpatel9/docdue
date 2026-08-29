@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DocumentCard } from '@/components/document-card';
 import { FilterSheet } from '@/components/filter-sheet';
 import { SearchField } from '@/components/search-field';
+import { BackupPrompt } from '@/components/backup-prompt';
 import { SummaryHeader } from '@/components/summary-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -167,6 +168,8 @@ export default function HomeScreen() {
               active={filters.urgencies}
               onToggle={toggleUrgency}
             />
+            {/* Only once there is something to lose. */}
+            {documents.length > 0 ? <BackupPrompt /> : null}
             {documents.length > 0 ? (
               <SearchField
                 value={filters.query}

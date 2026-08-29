@@ -10,7 +10,9 @@ import { Icon } from '@/components/ui/icon';
 import { TextField } from '@/components/ui/text-field';
 import { Radius, Spacing } from '@/constants/theme';
 import { IS_INSECURE_PREVIEW } from '@/db/init';
+import { backupAgeLabel } from '@/db/settings';
 import type { ReminderPlan } from '@/db/documents';
+import { useSettings } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 import { successFeedback, tapFeedback, warningFeedback } from '@/lib/haptics';
 import {
@@ -39,6 +41,7 @@ type Mode = 'export' | 'import';
 export function BackupPanel({ plan, onImported }: { plan: ReminderPlan; onImported: () => void }) {
   const db = useSQLiteContext();
   const theme = useTheme();
+  const { settings, update } = useSettings();
 
   const [mode, setMode] = useState<Mode | null>(null);
   const [passphrase, setPassphrase] = useState('');
@@ -131,6 +134,10 @@ export function BackupPanel({ plan, onImported }: { plan: ReminderPlan; onImport
       await discardExport(file);
     }
 
+    // Recorded only after the share sheet has closed, so the timestamp means
+    // "a file left the app", not "a file was written to a cache directory".
+    await update('lastBackupAt', new Date().toISOString());
+
     successFeedback();
     setDone('Backup saved. Keep the passphrase somewhere safe — it cannot be recovered.');
     close();
@@ -188,6 +195,11 @@ export function BackupPanel({ plan, onImported }: { plan: ReminderPlan; onImport
             </ThemedText>
             <ThemedText type="caption" themeColor="textTertiary">
               One encrypted file, locked with a passphrase you choose.
+            </ThemedText>
+            <ThemedText
+              type="caption"
+              style={{ color: settings.lastBackupAt ? theme.textTertiary : theme.warning }}>
+              {backupAgeLabel(settings.lastBackupAt)}
             </ThemedText>
           </View>
         </View>
