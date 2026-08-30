@@ -90,7 +90,7 @@ function Vault() {
   if (error) return <VaultUnavailable error={error} />;
 
   return (
-    <SQLiteProvider databaseName="expiry-vault.db" onInit={openVault} onError={setError}>
+    <SQLiteProvider databaseName="docdue.db" onInit={openVault} onError={setError}>
       <SettingsProvider>
         <Navigation />
       </SettingsProvider>

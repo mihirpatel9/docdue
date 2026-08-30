@@ -1,7 +1,7 @@
-# Expiry Vault
+# DocDue
 
 Passports, licences, insurance, registrations — the documents that quietly
-expire and cost you a border crossing, a fine, or a claim. Expiry Vault keeps
+expire and cost you a border crossing, a fine, or a claim. DocDue keeps
 their dates and photographs on your phone, encrypted, and tells you before they
 lapse.
 
@@ -62,8 +62,8 @@ to claim the security model works.
 ### Verifying encryption is real
 
 ```bash
-adb shell run-as com.mihirpatel.expiryvault \
-  cat files/SQLite/expiry-vault.db | head -c 16 | od -c
+adb shell run-as com.mihirpatel.docdue \
+  cat files/SQLite/docdue.db | head -c 16 | od -c
 ```
 
 Random bytes mean SQLCipher is working. If it ever reads `SQLite format 3`, the

@@ -32,7 +32,7 @@ export class WrongPassphraseError extends Error {
 export class IncompatibleBackupError extends Error {
   constructor(found: number) {
     super(
-      `This backup was written by a newer version of Expiry Vault (format ${found}, ` +
+      `This backup was written by a newer version of DocDue (format ${found}, ` +
         `this app reads ${BACKUP_SCHEMA_VERSION}). Update the app and try again.`
     );
     this.name = 'IncompatibleBackupError';

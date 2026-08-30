@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Expiry Vault",
-    "slug": "expiry-vault",
+    "name": "DocDue",
+    "slug": "docdue",
     "owner": "mihirpatel9",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "expiryvault",
+    "scheme": "docdue",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.mihirpatel.expiryvault",
+      "bundleIdentifier": "com.mihirpatel.docdue",
       "supportsTablet": true,
       "requireFullScreen": false,
       "infoPlist": {
@@ -18,7 +18,7 @@
       }
     },
     "android": {
-      "package": "com.mihirpatel.expiryvault",
+      "package": "com.mihirpatel.docdue",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -55,20 +55,20 @@
       [
         "expo-secure-store",
         {
-          "faceIDPermission": "Expiry Vault uses Face ID to unlock your encrypted documents."
+          "faceIDPermission": "DocDue uses Face ID to unlock your encrypted documents."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Expiry Vault uses a photo you choose so you can attach a picture of a document to its entry. Nothing is uploaded.",
-          "cameraPermission": "Expiry Vault opens the camera so you can photograph a document. The photo goes straight into the encrypted vault on this device."
+          "photosPermission": "DocDue uses a photo you choose so you can attach a picture of a document to its entry. Nothing is uploaded.",
+          "cameraPermission": "DocDue opens the camera so you can photograph a document. The photo goes straight into the encrypted vault on this device."
         }
       ],
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Expiry Vault uses Face ID to unlock your encrypted documents."
+          "faceIDPermission": "DocDue uses Face ID to unlock your encrypted documents."
         }
       ],
       "expo-notifications",

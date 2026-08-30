@@ -94,7 +94,7 @@ export function BackupPanel({ plan, onImported }: { plan: ReminderPlan; onImport
 
     const asset = result.assets[0];
     if (!asset.name.endsWith(`.${FILE_EXTENSION}`)) {
-      setError(`That is not an Expiry Vault backup. Look for a .${FILE_EXTENSION} file.`);
+      setError(`That is not a DocDue backup. Look for a .${FILE_EXTENSION} file.`);
       return;
     }
 
@@ -119,7 +119,7 @@ export function BackupPanel({ plan, onImported }: { plan: ReminderPlan; onImport
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(file.uri, {
           mimeType: MIME_TYPE,
-          dialogTitle: 'Save your Expiry Vault backup',
+          dialogTitle: 'Save your DocDue backup',
           UTI: 'public.data',
         });
       } else {
