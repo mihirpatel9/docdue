@@ -92,6 +92,31 @@ npx expo-updates runtimeversion:resolve --platform android   # must match EAS
 The real error is only in the build log, which is **brotli-compressed** despite
 its `.txt` name — `zlib.brotliDecompressSync` reads it; `gunzip` does not.
 
+## Brand assets
+
+The master icon is `assets/brand/docdue-icon-1024.png`. Everything in
+`assets/images/` that carries the mark is generated from it:
+
+```bash
+node scripts/icons/generate.js   assets/brand/docdue-icon-1024.png assets/images /tmp
+node scripts/icons/monochrome.js assets/brand/docdue-icon-1024.png assets/images
+```
+
+Three things the generator handles that a manual export would get wrong:
+
+- **`icon.png` must have no alpha channel.** The App Store rejects an icon that
+  carries one, so it is written as RGB rather than RGBA.
+- **The Android foreground is scaled to 60% of the canvas.** Android guarantees
+  only the central 66.7% is visible — the rest can be cropped to whatever mask
+  the launcher uses.
+- **The cut-out fills interior holes.** Keying the light background purely on
+  colour also punches through the white clock hands, which are light but are not
+  background. Only transparency reachable from the image border is treated as
+  background.
+
+The monochrome icon for Android 13+ themed icons is built from saturation rather
+than the alpha silhouette, because flattening the art gives an unreadable blob.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
