@@ -13,7 +13,7 @@
  */
 export const BACKUP_SCHEMA_VERSION = 3;
 
-export const FILE_EXTENSION = 'evault';
+export const FILE_EXTENSION = 'docdue';
 export const MIME_TYPE = 'application/octet-stream';
 
 /**
@@ -51,7 +51,7 @@ export function toDatabasePath(uri: string): string {
   return decodeURIComponent(path);
 }
 
-/** `docdue-2026-08-28.evault` — sorts chronologically in a file list. */
+/** `docdue-2026-08-28.docdue` — sorts chronologically in a file list. */
 export function backupFilename(now: Date): string {
   const stamp = [
     now.getFullYear(),
