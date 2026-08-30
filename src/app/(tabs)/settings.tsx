@@ -309,7 +309,7 @@ export default function SettingsScreen() {
 
         <View style={styles.about}>
           <ThemedText type="caption" themeColor="textTertiary" style={styles.centred}>
-            {Constants.expoConfig?.name ?? 'Expiry Vault'} {Constants.expoConfig?.version ?? ''}
+            {Constants.expoConfig?.name ?? 'DocDue'} {Constants.expoConfig?.version ?? ''}
           </ThemedText>
         </View>
       </ScrollView>

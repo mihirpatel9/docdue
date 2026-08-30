@@ -51,14 +51,14 @@ export function toDatabasePath(uri: string): string {
   return decodeURIComponent(path);
 }
 
-/** `expiry-vault-2026-08-28.evault` — sorts chronologically in a file list. */
+/** `docdue-2026-08-28.evault` — sorts chronologically in a file list. */
 export function backupFilename(now: Date): string {
   const stamp = [
     now.getFullYear(),
     String(now.getMonth() + 1).padStart(2, '0'),
     String(now.getDate()).padStart(2, '0'),
   ].join('-');
-  return `expiry-vault-${stamp}.${FILE_EXTENSION}`;
+  return `docdue-${stamp}.${FILE_EXTENSION}`;
 }
 
 export type PassphraseStrength = 'too-short' | 'weak' | 'fair' | 'strong';

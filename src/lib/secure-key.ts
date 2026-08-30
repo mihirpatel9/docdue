@@ -1,7 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 
-const KEY_NAME = 'expiry-vault.db.key';
+const KEY_NAME = 'docdue.db.key';
 
 /**
  * The database encryption key lives in the platform keystore — iOS Keychain,

@@ -51,8 +51,8 @@ check(
 );
 
 // --- Filename -------------------------------------------------------------
-check('filename is date-stamped', backupFilename(new Date(2026, 7, 28)), 'expiry-vault-2026-08-28.evault');
-check('month and day are zero-padded', backupFilename(new Date(2026, 0, 5)), 'expiry-vault-2026-01-05.evault');
+check('filename is date-stamped', backupFilename(new Date(2026, 7, 28)), 'docdue-2026-08-28.evault');
+check('month and day are zero-padded', backupFilename(new Date(2026, 0, 5)), 'docdue-2026-01-05.evault');
 
 // --- Passphrase strength --------------------------------------------------
 check('below the minimum', ratePassphrase('short'), 'too-short');

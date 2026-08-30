@@ -64,7 +64,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
     }
 
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock Expiry Vault',
+      promptMessage: 'Unlock DocDue',
       cancelLabel: 'Cancel',
       // Load-bearing twice over: it lets a wet or injured finger fall back to
       // the passcode, and on a PIN-only phone it is the ONLY thing that can
@@ -126,7 +126,7 @@ export function AppLock({ children }: { children: React.ReactNode }) {
         </View>
 
         <ThemedText type="title" style={styles.title}>
-          Expiry Vault
+          DocDue
         </ThemedText>
         <ThemedText type="default" themeColor="textSecondary" style={styles.body}>
           {failed
