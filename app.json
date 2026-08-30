@@ -29,7 +29,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -81,14 +82,14 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7ec730cb-a954-430b-ad4d-5b7c2bcf456e"
+        "projectId": "f5153866-fec2-46df-8644-665db9d0168c"
       }
     },
     "runtimeVersion": {
       "policy": "fingerprint"
     },
     "updates": {
-      "url": "https://u.expo.dev/7ec730cb-a954-430b-ad4d-5b7c2bcf456e"
+      "url": "https://u.expo.dev/f5153866-fec2-46df-8644-665db9d0168c"
     }
   }
 }
