@@ -40,19 +40,19 @@ check('empty string', sqlLiteral(''), "''");
 // --- URI to filesystem path ----------------------------------------------
 check(
   'strips the file:// scheme',
-  toDatabasePath('file:///data/user/0/app/cache/exports/v.evault'),
-  '/data/user/0/app/cache/exports/v.evault'
+  toDatabasePath('file:///data/user/0/app/cache/exports/v.docdue'),
+  '/data/user/0/app/cache/exports/v.docdue'
 );
-check('leaves a bare path alone', toDatabasePath('/tmp/v.evault'), '/tmp/v.evault');
+check('leaves a bare path alone', toDatabasePath('/tmp/v.docdue'), '/tmp/v.docdue');
 check(
   'decodes percent-encoding',
-  toDatabasePath('file:///tmp/My%20Backups/v.evault'),
-  '/tmp/My Backups/v.evault'
+  toDatabasePath('file:///tmp/My%20Backups/v.docdue'),
+  '/tmp/My Backups/v.docdue'
 );
 
 // --- Filename -------------------------------------------------------------
-check('filename is date-stamped', backupFilename(new Date(2026, 7, 28)), 'docdue-2026-08-28.evault');
-check('month and day are zero-padded', backupFilename(new Date(2026, 0, 5)), 'docdue-2026-01-05.evault');
+check('filename is date-stamped', backupFilename(new Date(2026, 7, 28)), 'docdue-2026-08-28.docdue');
+check('month and day are zero-padded', backupFilename(new Date(2026, 0, 5)), 'docdue-2026-01-05.docdue');
 
 // --- Passphrase strength --------------------------------------------------
 check('below the minimum', ratePassphrase('short'), 'too-short');
