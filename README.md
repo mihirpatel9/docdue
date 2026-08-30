@@ -72,6 +72,26 @@ vault is shipping plaintext.
 Note that `adb shell screencap` returns a 0-byte file. That is `expo-screen-capture`
 setting `FLAG_SECURE` — the app working, not a bug.
 
+### Run `npm ci` before an EAS build if you have built locally
+
+`runtimeVersion` uses the **fingerprint** policy, and EAS refuses a build when the
+fingerprint it computes disagrees with the one your machine computed — otherwise
+updates published here would target a runtime the binary does not have.
+
+A local Gradle build writes output *inside* `node_modules`, for example
+`node_modules/@react-native-masked-view/masked-view/android/build/`. EAS installs
+clean from the lockfile and has no such directory, so the two fingerprints
+diverge and the build dies in `CONFIGURE_EXPO_UPDATES` with nothing but
+`Unknown error` in the CLI. A clean install realigns them:
+
+```bash
+rm -rf node_modules android && npm ci
+npx expo-updates runtimeversion:resolve --platform android   # must match EAS
+```
+
+The real error is only in the build log, which is **brotli-compressed** despite
+its `.txt` name — `zlib.brotliDecompressSync` reads it; `gunzip` does not.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
