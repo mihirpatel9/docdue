@@ -29,8 +29,10 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.USE_FINGERPRINT"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ]
     },
     "web": {
@@ -63,7 +65,8 @@
         "expo-image-picker",
         {
           "photosPermission": "DocDue uses a photo you choose so you can attach a picture of a document to its entry. Nothing is uploaded.",
-          "cameraPermission": "DocDue opens the camera so you can photograph a document. The photo goes straight into the encrypted vault on this device."
+          "cameraPermission": "DocDue opens the camera so you can photograph a document. The photo goes straight into the encrypted vault on this device.",
+          "microphonePermission": false
         }
       ],
       [
